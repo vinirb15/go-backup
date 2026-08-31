@@ -35,6 +35,7 @@ DB_PORT=3306  # or 5432 for PostgreSQL
 DB_NAME=your_database
 DB_USER=username
 DB_PASS=password
+CRON_TIME=0 0 * * *  # optional, cron schedule (5 fields, robfig/cron/v3); defaults to midnight
 ```
 
 ## Running the Backup Script

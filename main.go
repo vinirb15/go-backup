@@ -33,13 +33,21 @@ func main() {
 		os.Exit(1)
 	}
 
+	cronTime := os.Getenv("CRON_TIME")
+	if cronTime == "" {
+		cronTime = "0 0 * * *"
+	}
+
 	c := cron.New()
-	c.AddFunc("0 0 * * *", func() {
+	if _, err := c.AddFunc(cronTime, func() {
 		backupDatabase(dbType, host, port, dbName, user, pass)
-	})
+	}); err != nil {
+		fmt.Println("Erro: expressão CRON_TIME inválida:", err)
+		os.Exit(1)
+	}
 	c.Start()
 
-	fmt.Println("Agendador iniciado. Backup será executado diariamente às 00:00.")
+	fmt.Printf("Agendador iniciado. Backup agendado para: %s\n", cronTime)
 	select {}
 }
 
