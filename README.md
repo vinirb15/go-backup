@@ -36,6 +36,7 @@ DB_NAME=your_database
 DB_USER=username
 DB_PASS=password
 CRON_TIME=0 0 * * *  # optional, cron schedule (5 fields, robfig/cron/v3); defaults to midnight
+TZ=America/Sao_Paulo  # optional, IANA timezone for the schedule; defaults to the system timezone
 ```
 
 ## Running the Backup Script

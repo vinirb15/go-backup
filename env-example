@@ -1,5 +1,6 @@
 DB_TYPE=postgres  # Ou mysql
 CRON_TIME=0 0 * * *   # Opcional; formato cron de 5 campos (robfig/cron/v3). Padrão: meia-noite
+TZ=America/Sao_Paulo  # Opcional; fuso horário do agendamento (IANA tz). Padrão: fuso do sistema
 DB_HOST=localhost
 DB_PORT=5432      # 3306 para MySQL
 DB_NAME=my-database

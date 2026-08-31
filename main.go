@@ -38,7 +38,17 @@ func main() {
 		cronTime = "0 0 * * *"
 	}
 
-	c := cron.New()
+	loc := time.Local
+	if tz := os.Getenv("TZ"); tz != "" {
+		l, err := time.LoadLocation(tz)
+		if err != nil {
+			fmt.Println("Erro: fuso horário TZ inválido:", err)
+			os.Exit(1)
+		}
+		loc = l
+	}
+
+	c := cron.New(cron.WithLocation(loc))
 	if _, err := c.AddFunc(cronTime, func() {
 		backupDatabase(dbType, host, port, dbName, user, pass)
 	}); err != nil {
@@ -47,7 +57,7 @@ func main() {
 	}
 	c.Start()
 
-	fmt.Printf("Agendador iniciado. Backup agendado para: %s\n", cronTime)
+	fmt.Printf("Agendador iniciado. Backup agendado para: %s (%s)\n", cronTime, loc)
 	select {}
 }
 
