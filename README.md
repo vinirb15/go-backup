@@ -9,9 +9,9 @@ This Go project automates daily database backups for MySQL and PostgreSQL using 
 - Logs errors and execution details in `./dump/backup.log`
 
 ## Requirements
-- Go 1.20+
+- Go 1.22+
 - MySQL or PostgreSQL client tools (`mysqldump`, `pg_dump`)
-- Docker (optional)
+- Docker + Docker Compose (optional)
 
 ## Installation
 ### Clone the repository
@@ -45,15 +45,39 @@ TZ=America/Sao_Paulo  # optional, IANA timezone for the schedule; defaults to th
 go run main.go
 ```
 
-### Using Docker
-#### Build the image
+### Using Docker Compose
+Build and start the scheduler in the background:
 ```sh
-docker build -t db-backup .
+docker compose up -d --build
+```
+- Config is read from `.env` (`env_file`); dumps are written to `./dump` on the host.
+- View logs: `docker compose logs -f`
+- Stop: `docker compose down`
+
+If the database runs on the Docker host, set `DB_HOST=host.docker.internal` in
+`.env` (not `localhost`, which would point at the container itself).
+
+## Restoring a Backup
+Use the `restore` subcommand to load a dump into the database described by the
+current `DB_*` variables:
+```sh
+go run . restore dump/backup_<DB_NAME>_<TIMESTAMP>.sql
+```
+- MySQL dumps are plain SQL and are piped into the `mysql` client.
+- PostgreSQL dumps use the custom format (`pg_dump -F c`) and are restored with
+  `pg_restore --clean --if-exists --no-owner`.
+- The target database must already exist (the dumps do not include `CREATE DATABASE`).
+
+To restore into **another server**, point the `DB_*` variables at the target before
+running — either edit `.env`, or override them in the environment (values already
+exported take precedence over `.env`):
+```sh
+DB_HOST=new-host DB_NAME=new-db go run . restore dump/backup_app_20260101_000000.sql
 ```
 
-#### Run the container
+With Docker Compose:
 ```sh
-docker run --env-file .env -v $(pwd)/dump:/root/dump db-backup
+docker compose run --rm backup ./db_backup restore dump/<file>
 ```
 
 ## Logs & Backup Files

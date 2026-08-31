@@ -1,0 +1,13 @@
+services:
+  backup:
+    build: .
+    image: db-backup
+    container_name: db-backup
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./dump:/root/dump
+    # Allows DB_HOST=host.docker.internal to reach a database running on the
+    # Docker host (needed on Linux; already works on Docker Desktop).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
