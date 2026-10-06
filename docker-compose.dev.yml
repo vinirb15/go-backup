@@ -1,0 +1,16 @@
+# Local development: builds the image from source and reads config from .env.
+# Usage: docker compose -f docker-compose.dev.yml up -d --build
+services:
+  backup:
+    build: .
+    image: db-backup
+    container_name: db-backup
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      # The container runs as UID 1000: on Linux the host dir must be writable by it.
+      - ./dump:/app/dump
+    # Allows DB_HOST=host.docker.internal to reach a database running on the
+    # Docker host (needed on Linux; already works on Docker Desktop).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
