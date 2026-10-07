@@ -74,14 +74,21 @@ DB_PASS=password
 go run main.go
 ```
 
-### Using Docker Compose
+### Using Docker Compose (local build)
 Build and start the scheduler in the background:
 ```sh
-docker compose up -d --build
+docker compose -f docker-compose.dev.yml up -d --build
 ```
 - Config is read from `.env` (`env_file`); dumps are written to `./dump` on the host.
-- View logs: `docker compose logs -f`
-- Stop: `docker compose down`
+- The container runs as UID 1000; on Linux, `./dump` must be writable by it
+  (`sudo chown -R 1000:1000 dump`).
+- View logs: `docker compose -f docker-compose.dev.yml logs -f`
+- Stop: `docker compose -f docker-compose.dev.yml down`
+
+### Deploying (CasaOS)
+Pushes to `main` publish `ghcr.io/vinirb15/go-backup` and Watchtower updates the
+server automatically. `docker-compose.yml` is the reference to import in CasaOS;
+see [DEPLOY.md](DEPLOY.md).
 
 If the database runs on the Docker host, set `DB_HOST=host.docker.internal` in
 `.env` (not `localhost`, which would point at the container itself).
@@ -109,9 +116,9 @@ exported take precedence over `.env`):
 APP_DB_HOST=new-host APP_DB_NAME=new-db go run . restore app dump/backup_app_20260101_000000.sql
 ```
 
-With Docker Compose:
+With Docker Compose (on the CasaOS server, use `docker exec db-backup ./db_backup restore <alias> dump/<file>`):
 ```sh
-docker compose run --rm backup ./db_backup restore <alias> dump/<file>
+docker compose -f docker-compose.dev.yml run --rm backup ./db_backup restore <alias> dump/<file>
 ```
 
 ## Logs & Backup Files

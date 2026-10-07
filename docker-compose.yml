@@ -1,13 +1,36 @@
+# Reference compose for CasaOS (App Store > Custom Install > Import).
+# Image is built by .github/workflows/deploy.yml and kept up to date by Watchtower
+# (see docker-compose.watchtower.yml). Replace the <...> placeholders in the
+# CasaOS UI after importing; never commit real credentials here.
+# No ports: the app is a cron scheduler and exposes nothing.
+name: db-backup
 services:
   backup:
-    build: .
-    image: db-backup
+    image: ghcr.io/vinirb15/go-backup:latest
     container_name: db-backup
     restart: unless-stopped
-    env_file: .env
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+    environment:
+      TZ: America/Sao_Paulo
+      CRON_TIME: "0 0 * * *"
+      # One alias per database; each reads <ALIAS>_DB_* (alias in uppercase).
+      DATABASES: app,crm
+      APP_DB_TYPE: postgres
+      APP_DB_HOST: host.docker.internal
+      APP_DB_PORT: "5432"
+      APP_DB_NAME: <app-db-name>
+      APP_DB_USER: <app-db-user>
+      APP_DB_PASS: <app-db-password>
+      CRM_DB_TYPE: mysql
+      CRM_DB_HOST: host.docker.internal
+      CRM_DB_PORT: "3306"
+      CRM_DB_NAME: <crm-db-name>
+      CRM_DB_USER: <crm-db-user>
+      CRM_DB_PASS: <crm-db-password>
     volumes:
-      - ./dump:/root/dump
-    # Allows DB_HOST=host.docker.internal to reach a database running on the
-    # Docker host (needed on Linux; already works on Docker Desktop).
+      # Must be writable by UID 1000: sudo chown -R 1000:1000 /DATA/AppData/db-backup
+      - /DATA/AppData/db-backup/dump:/app/dump
+    # Lets *_DB_HOST=host.docker.internal reach a database running on the host.
     extra_hosts:
       - "host.docker.internal:host-gateway"
