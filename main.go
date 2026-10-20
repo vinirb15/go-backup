@@ -1,9 +1,13 @@
 package main
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -112,6 +116,26 @@ func aliases(configs []dbConfig) string {
 	return strings.Join(names, ", ")
 }
 
+func findConfig(configs []dbConfig, alias string) (dbConfig, bool) {
+	for _, cfg := range configs {
+		if strings.EqualFold(cfg.alias, alias) {
+			return cfg, true
+		}
+	}
+	return dbConfig{}, false
+}
+
+// backupFilePattern segue o nome gerado em backupDatabase: backup_<alias>_<AAAAMMDD>_<HHMMSS>.sql
+var backupFilePattern = regexp.MustCompile(`^backup_(.+)_\d{8}_\d{6}\.sql$`)
+
+func aliasFromFile(file string) (string, bool) {
+	m := backupFilePattern.FindStringSubmatch(filepath.Base(file))
+	if m == nil {
+		return "", false
+	}
+	return m[1], true
+}
+
 func main() {
 	if len(os.Args) > 1 && os.Args[1] == "restore" {
 		runRestore(os.Args[2:])
@@ -166,24 +190,29 @@ func runRestore(args []string) {
 	var cfg dbConfig
 	var file string
 	if len(args) == 1 {
-		if len(configs) > 1 {
-			fmt.Printf("Erro: há %d bancos configurados; informe o alias: db_backup restore <alias> <arquivo-de-dump> (disponíveis: %s)\n", len(configs), aliases(configs))
-			os.Exit(1)
-		}
-		cfg, file = configs[0], args[0]
-	} else {
-		found := false
-		for _, c := range configs {
-			if strings.EqualFold(c.alias, args[0]) {
-				cfg, found = c, true
-				break
+		file = args[0]
+		if alias, ok := aliasFromFile(file); ok {
+			// O nome do arquivo indica de qual banco é o backup: evita restaurá-lo no banco errado.
+			c, found := findConfig(configs, alias)
+			if !found {
+				fmt.Printf("Erro: o arquivo parece ser um backup de %q, mas não há banco %q configurado (disponíveis: %s). Informe o alias explicitamente: db_backup restore <alias> <arquivo-de-dump>\n", alias, alias, aliases(configs))
+				os.Exit(1)
 			}
+			cfg = c
+		} else {
+			if len(configs) > 1 {
+				fmt.Printf("Erro: há %d bancos configurados; informe o alias: db_backup restore <alias> <arquivo-de-dump> (disponíveis: %s)\n", len(configs), aliases(configs))
+				os.Exit(1)
+			}
+			cfg = configs[0]
 		}
+	} else {
+		c, found := findConfig(configs, args[0])
 		if !found {
 			fmt.Printf("Erro: alias desconhecido: %s (disponíveis: %s)\n", args[0], aliases(configs))
 			os.Exit(1)
 		}
-		file = args[1]
+		cfg, file = c, args[1]
 	}
 
 	if err := restoreDatabase(cfg, file); err != nil {
@@ -252,8 +281,31 @@ func restoreDatabase(cfg dbConfig, file string) error {
 		return fmt.Errorf("tipo de banco de dados não suportado: %s", cfg.dbType)
 	}
 
+	var stderr bytes.Buffer
 	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stderr = io.MultiWriter(os.Stderr, &stderr)
 
-	return cmd.Run()
+	err := cmd.Run()
+	var exitErr *exec.ExitError
+	if cfg.dbType == "postgres" && errors.As(err, &exitErr) && exitErr.ExitCode() == 1 && onlyTransactionTimeoutErrors(stderr.String()) {
+		fmt.Printf("[%s] Aviso: servidor Postgres < 17 não reconhece \"transaction_timeout\" (pg_restore mais novo que o servidor); erro ignorado.\n", cfg.alias)
+		return nil
+	}
+	return err
+}
+
+// onlyTransactionTimeoutErrors indica se todos os erros do pg_restore vieram do
+// "SET transaction_timeout" que o pg_restore >= 17 envia e servidores < 17 não reconhecem.
+func onlyTransactionTimeoutErrors(output string) bool {
+	found := false
+	for _, line := range strings.Split(output, "\n") {
+		if !strings.HasPrefix(line, "pg_restore: error:") {
+			continue
+		}
+		if !strings.Contains(line, "transaction_timeout") {
+			return false
+		}
+		found = true
+	}
+	return found
 }

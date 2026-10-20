@@ -1,4 +1,5 @@
 .git
+.github
 .gitignore
 .dockerignore
 .env
@@ -7,5 +8,5 @@ env-example
 dump/
 *.md
 Dockerfile
-docker-compose.yml
+docker-compose*.yml
 .claude/

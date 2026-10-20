@@ -1,0 +1,17 @@
+# Watchtower (maintained fork; containrrr/watchtower is archived and does not
+# work with Docker 29+). Only updates containers labeled
+# com.centurylinklabs.watchtower.enable=true, polling every 120s.
+name: watchtower
+services:
+  watchtower:
+    image: nickfedor/watchtower:1
+    container_name: watchtower
+    restart: unless-stopped
+    command: --label-enable --cleanup --interval 120
+    environment:
+      TZ: America/Sao_Paulo
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Private GHCR images only: run `docker login ghcr.io` on the host first,
+      # then uncomment (adjust the path if you logged in as a non-root user).
+      # - /root/.docker/config.json:/config.json:ro
