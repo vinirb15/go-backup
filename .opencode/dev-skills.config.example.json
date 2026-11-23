@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "tracker": "github",
+  "project_name": "project_name",
+  "github": {
+    "repo": "minha-org/project_name"
+  },
+  "statuses": {
+    "backlog": "status: backlog",
+    "scoping": "status: scoping",
+    "ready_to_grooming": "status: ready to grooming",
+    "in_grooming": "status: in grooming",
+    "ready_to_develop": "status: ready to develop",
+    "in_develop": "status: in develop",
+    "blocked": "status: blocked",
+    "in_review": "status: in review",
+    "testing": "status: testing",
+    "homologating": "status: homologating",
+    "waiting_for_deploy": "status: waiting for deploy",
+    "deployed": "status: deployed",
+    "cancelled": "status: cancelled"
+  },
+  "priorities": {
+    "urgent": "priority: urgent",
+    "high": "priority: high",
+    "normal": "priority: normal",
+    "low": "priority: low"
+  },
+  "task_types": {
+    "bug": "bug",
+    "task": "enhancement"
+  },
+  "repo": {
+    "default_branch": "main",
+    "monorepo": false,
+    "test_command": "go test ./...",
+    "lint_command": "go vet ./...",
+    "build_command": "go build ./...",
+    "coverage_config_path": null,
+    "orm": "none"
+  },
+  "board": {
+    "repo": "minha-org/project_name",
+    "statuses": {
+      "backlog": "board: backlog",
+      "planning": "board: planning",
+      "in_progress": "board: in progress",
+      "testing": "board: testing",
+      "release": "board: release"
+    },
+    "coverage_threshold": 90
+  }
+}

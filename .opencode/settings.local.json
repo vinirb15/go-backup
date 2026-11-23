@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rtk read *)",
+      "Bash(rtk ls *)",
+      "Bash(rtk grep *)",
+      "Bash(rtk wc *)",
+      "Bash(kill %%)",
+      "mcp__clickup__clickup_update_task",
+      "mcp__clickup__clickup_filter_tasks"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "lightrag"
+  ]
+}

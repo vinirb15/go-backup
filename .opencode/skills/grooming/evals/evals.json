@@ -1,0 +1,24 @@
+{
+  "skill_name": "grooming",
+  "note": "Os nomes de estágio (Ready To Grooming, Ready To Develop, In Review, etc.) refletem os padrões sugeridos pela skill project-setup; o label real de cada estágio no GitHub é configurável por projeto em .opencode/dev-skills.config.json.",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "fazer grooming da próxima issue que está ready to grooming",
+      "expected_output": "Skill lista via gh as issues abertas com o label de Ready To Grooming, ordena por prioridade e data, confirma com o usuário, troca o label para In Grooming, lê descrição e comentários, gera Definições Técnicas com todas as seções (Visão Geral, Entidades, Endpoints, Banco, Regras, Casos de Borda, Critérios de Aceite, Dependências), anexa à descrição da issue preservando o conteúdo original, e troca o label para Ready To Develop. Não faz nenhum rastreamento de tempo.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "refinar tecnicamente a issue #42 do github",
+      "expected_output": "Skill usa o número fornecido diretamente sem listar issues, troca o label para In Grooming, lê contexto, gera Definições Técnicas em PT-BR, anexa na descrição sem sobrescrever (gh issue edit --body-file), e troca o label para Ready To Develop.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "grooming",
+      "expected_output": "Skill é acionada pelo termo simples 'grooming', lista issues com o label de Ready To Grooming, pede confirmação e executa o fluxo completo.",
+      "files": []
+    }
+  ]
+}

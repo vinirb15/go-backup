@@ -1,0 +1,30 @@
+{
+  "skill_name": "review-pr-git",
+  "note": "Os nomes de estágio (Ready To Grooming, Ready To Develop, In Review, etc.) refletem os padrões sugeridos pela skill project-setup; o label real de cada estágio no GitHub é configurável por projeto em .opencode/dev-skills.config.json.",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "revisar a branch da próxima issue que está in review",
+      "expected_output": "Skill lista via gh as issues com o label de In Review, confirma com o usuário, lê descrição e comentários (Definições Técnicas), descobre a branch da issue pelo número (feat/<número>-...), roda git fetch + git diff origin/main...origin/<branch> + git log, revisa o diff contra os critérios de aceite técnicos, escreve o Relatório de Revisão com veredito explícito, anexa à descrição da issue e troca o label para Testing (aprovado) ou In Develop (reprovado). Não usa gh pr e não faz rastreamento de tempo.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "code review com git da branch feat/42-login-fix",
+      "expected_output": "Skill usa o nome da branch fornecido, localiza a issue #42 pelo número no nome da branch, obtém o diff via git diff three-dot contra origin/main, revisa contra as Definições Técnicas, anexa o relatório à descrição da issue e troca o label conforme o veredito sem sobrescrever a descrição.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "revisão da branch",
+      "expected_output": "Skill é acionada pelo termo simples 'revisão da branch', lista issues com o label de In Review, pede confirmação e executa o fluxo completo de revisão usando git para obter o diff.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "revisar a issue #17 sem PR",
+      "expected_output": "Skill usa o número fornecido diretamente sem listar issues, lê o contexto, tenta descobrir a branch (comentários, descrição ou git branch -r pelo número da issue); se não houver vínculo claro com uma branch, pergunta ao usuário qual é a branch antes de prosseguir.",
+      "files": []
+    }
+  ]
+}

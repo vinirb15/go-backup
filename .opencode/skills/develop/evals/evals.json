@@ -1,0 +1,30 @@
+{
+  "skill_name": "develop",
+  "note": "Os nomes de estágio (Ready To Grooming, Ready To Develop, In Review, etc.) refletem os padrões sugeridos pela skill project-setup; o label real de cada estágio no GitHub é configurável por projeto em .opencode/dev-skills.config.json.",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "desenvolver a próxima issue que está ready to develop",
+      "expected_output": "Skill lista via gh as issues com o label de Ready To Develop, confirma com o usuário, valida que existe a seção Definições Técnicas, troca o label para In Develop, lê descrição e comentários, cria branch feat/<número>-<slug> a partir da main, implementa via TDD seguindo a ordem das Definições Técnicas, gera migrations via ORM configurado se necessário, roda testes + lint + build configurados no projeto, faz commit com 'Refs: #<número>', abre PR via gh com 'Refs #<número>' (nunca 'Closes'), anexa o link do PR à descrição da issue e troca o label para In Review. Não faz nenhum rastreamento de tempo.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "implementar a issue #42 do github",
+      "expected_output": "Skill usa o número fornecido diretamente sem listar issues, verifica que a issue tem Definições Técnicas, troca o label para In Develop, cria branch feat/42-... ou fix/42-... a partir da main, implementa, valida com testes/lint/build, abre PR via gh referenciando a issue sem palavra-chave de fechamento e troca o label para In Review.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "fazer o develop dessa issue",
+      "expected_output": "Skill é acionada pelo termo 'develop', identifica a issue em Ready To Develop (ou a informada), e executa o fluxo completo até abrir o PR e mover para In Review, respeitando a regra de migrations só via ORM configurado no projeto e nunca commitando na main.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "codar a issue X (que ainda não passou por grooming)",
+      "expected_output": "Skill detecta a ausência da seção Definições Técnicas na descrição, informa que a issue precisa de grooming antes (skill grooming) e encerra sem implementar.",
+      "files": []
+    }
+  ]
+}

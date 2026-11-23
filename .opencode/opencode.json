@@ -1,0 +1,21 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "permission": {
+    "edit": "ask",
+    "bash": {
+      "rtk read *": "allow",
+      "rtk ls *": "allow",
+      "rtk grep *": "allow",
+      "rtk wc *": "allow",
+      "kill %%": "allow",
+      "*": "ask"
+    }
+  },
+  "mcp": {
+    "clickup": {
+      "type": "remote",
+      "url": "https://mcp.clickup.com/mcp",
+      "enabled": false
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "skill_name": "review-pr-gh",
+  "note": "Os nomes de estágio (Ready To Grooming, Ready To Develop, In Review, etc.) refletem os padrões sugeridos pela skill project-setup; o label real de cada estágio no GitHub é configurável por projeto em .opencode/dev-skills.config.json.",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "revisar o PR da próxima issue que está in review",
+      "expected_output": "Skill lista via gh as issues com o label de In Review, confirma com o usuário, lê descrição e comentários (Definições Técnicas), localiza o PR (linha 'PR aberto' na descrição ou gh pr list --search '<número> in:body'), lê gh pr view + gh pr diff, revisa o diff contra os critérios de aceite técnicos, escreve o Relatório de Revisão com veredito explícito, anexa à descrição da issue e troca o label para Testing (aprovado) ou In Develop (reprovado). Não faz nenhum rastreamento de tempo.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "fazer code review do PR #42",
+      "expected_output": "Skill usa o número do PR fornecido, localiza a issue vinculada pelo 'Refs #<n>' no corpo do PR, lê o diff via gh, revisa contra as Definições Técnicas, anexa o relatório à descrição da issue sem sobrescrever o conteúdo anterior e troca o label conforme o veredito.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "revisão",
+      "expected_output": "Skill é acionada pelo termo simples 'revisão', lista issues com o label de In Review, pede confirmação e executa o fluxo completo de revisão.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "revisar a issue #17 do github",
+      "expected_output": "Skill usa o número fornecido diretamente sem listar issues, lê o contexto, localiza o PR correspondente; se não houver vínculo claro com um PR, pergunta ao usuário qual é o número/URL do PR antes de prosseguir.",
+      "files": []
+    }
+  ]
+}
