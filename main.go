@@ -128,6 +128,8 @@ func findConfig(configs []dbConfig, alias string) (dbConfig, bool) {
 // backupFilePattern segue o nome gerado em backupDatabase: backup_<alias>_<AAAAMMDD>_<HHMMSS>.sql
 var backupFilePattern = regexp.MustCompile(`^backup_(.+)_\d{8}_\d{6}\.sql$`)
 
+const backupRetention = 72 * time.Hour
+
 func aliasFromFile(file string) (string, bool) {
 	m := backupFilePattern.FindStringSubmatch(filepath.Base(file))
 	if m == nil {
@@ -167,7 +169,9 @@ func main() {
 	c := cron.New(cron.WithLocation(loc))
 	if _, err := c.AddFunc(cronTime, func() {
 		for _, cfg := range configs {
-			backupDatabase(cfg)
+			if err := backupDatabase(cfg); err != nil {
+				fmt.Printf("[%s] Erro ao executar backup: %v\n", cfg.alias, err)
+			}
 		}
 	}); err != nil {
 		fmt.Println("Erro: expressão CRON_TIME inválida:", err)
@@ -223,7 +227,7 @@ func runRestore(args []string) {
 	fmt.Printf("[%s] Restauração concluída com sucesso a partir de: %s\n", cfg.alias, file)
 }
 
-func backupDatabase(cfg dbConfig) {
+func backupDatabase(cfg dbConfig) error {
 	timestamp := time.Now().Format("20060102_150405")
 	backupFile := fmt.Sprintf("dump/backup_%s_%s.sql", cfg.alias, timestamp)
 	var cmd *exec.Cmd
@@ -235,26 +239,60 @@ func backupDatabase(cfg dbConfig) {
 		cmd = exec.Command("pg_dump", "-h", cfg.host, "-p", cfg.port, "-U", cfg.user, "-d", cfg.dbName, "-F", "c")
 		cmd.Env = append(os.Environ(), "PGPASSWORD="+cfg.pass)
 	default:
-		fmt.Printf("[%s] Erro: Tipo de banco de dados não suportado.\n", cfg.alias)
-		return
+		return fmt.Errorf("tipo de banco de dados não suportado: %s", cfg.dbType)
 	}
 
 	outFile, err := os.Create(backupFile)
 	if err != nil {
-		fmt.Printf("[%s] Erro ao criar arquivo de backup: %v\n", cfg.alias, err)
-		return
+		return fmt.Errorf("criar arquivo de backup: %w", err)
 	}
 
 	cmd.Stdout = outFile
 	cmd.Stderr = os.Stderr
 
 	err = cmd.Run()
-	outFile.Close()
+	closeErr := outFile.Close()
 	if err != nil {
-		os.Remove(backupFile)
-		fmt.Printf("[%s] Erro ao executar backup: %v\n", cfg.alias, err)
-	} else {
-		fmt.Printf("[%s] Backup realizado com sucesso: %s\n", cfg.alias, backupFile)
+		if removeErr := os.Remove(backupFile); removeErr != nil && !os.IsNotExist(removeErr) {
+			fmt.Printf("[%s] Erro ao remover arquivo parcial %s: %v\n", cfg.alias, backupFile, removeErr)
+		}
+		return err
+	}
+	if closeErr != nil {
+		if removeErr := os.Remove(backupFile); removeErr != nil && !os.IsNotExist(removeErr) {
+			fmt.Printf("[%s] Erro ao remover arquivo parcial %s: %v\n", cfg.alias, backupFile, removeErr)
+		}
+		return fmt.Errorf("fechar arquivo de backup: %w", closeErr)
+	}
+
+	cleanupExpiredBackups("dump", time.Now(), backupRetention)
+	fmt.Printf("[%s] Backup realizado com sucesso: %s\n", cfg.alias, backupFile)
+	return nil
+}
+
+func cleanupExpiredBackups(dir string, now time.Time, retention time.Duration) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		fmt.Printf("Erro ao ler diretório de dumps %s: %v\n", dir, err)
+		return
+	}
+
+	for _, entry := range entries {
+		if !entry.Type().IsRegular() || !backupFilePattern.MatchString(entry.Name()) {
+			continue
+		}
+
+		info, err := entry.Info()
+		if err != nil {
+			fmt.Printf("Erro ao ler informações do dump %s: %v\n", filepath.Join(dir, entry.Name()), err)
+			continue
+		}
+		if now.Sub(info.ModTime()) <= retention {
+			continue
+		}
+		if err := os.Remove(filepath.Join(dir, entry.Name())); err != nil {
+			fmt.Printf("Erro ao remover dump expirado %s: %v\n", filepath.Join(dir, entry.Name()), err)
+		}
 	}
 }
 
