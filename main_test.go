@@ -90,6 +90,57 @@ func TestBackupDatabaseFailureDoesNotCleanUpExpiredBackups(t *testing.T) {
 	}
 }
 
+func TestBackupDatabaseSuccessCleansExpiredBackupsAndPreservesNewDump(t *testing.T) {
+	workDir := t.TempDir()
+	binDir := filepath.Join(workDir, "bin")
+	previousDir, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(workDir); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(previousDir); err != nil {
+			t.Errorf("restaurar diretório de trabalho: %v", err)
+		}
+	})
+
+	if err := os.Mkdir(binDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	command := filepath.Join(binDir, "mysqldump")
+	if err := os.WriteFile(command, []byte("#!/bin/sh\nprintf dump\n"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", binDir+string(os.PathListSeparator)+os.Getenv("PATH"))
+
+	if err := os.Mkdir("dump", 0o700); err != nil {
+		t.Fatal(err)
+	}
+	expired := filepath.Join("dump", "backup_old_20261120_110000.sql")
+	if err := os.WriteFile(expired, []byte("dump"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chtimes(expired, time.Now().Add(-73*time.Hour), time.Now().Add(-73*time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := backupDatabase(dbConfig{alias: "db", dbType: "mysql"}); err != nil {
+		t.Fatalf("backupDatabase() retornou erro: %v", err)
+	}
+	assertFileDoesNotExist(t, expired)
+
+	newDumps, err := filepath.Glob(filepath.Join("dump", "backup_db_*.sql"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(newDumps) != 1 {
+		t.Fatalf("esperava um dump recém-criado no diretório temporário, obteve: %v", newDumps)
+	}
+	assertFileExists(t, newDumps[0])
+}
+
 func assertFileExists(t *testing.T, path string) {
 	t.Helper()
 	if _, err := os.Stat(path); err != nil {
